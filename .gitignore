@@ -1,0 +1,32 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+.python-version
+
+# Environment files (local only)
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Coverage / test
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Migrations cache / build artifacts
+alembic.ini

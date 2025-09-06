@@ -1,0 +1,40 @@
+openapi: 3.1.0
+info:
+  title: Chatbot
+  description: Production-shaped chatbot API. Minimal endpoints for v0.1.
+  version: 0.1.0
+paths:
+  /health:
+    get:
+      tags:
+      - Health
+      summary: liveness check
+      description: returns 200 when the app is alive
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+components:
+  schemas:
+    HealthResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        service:
+          type: string
+          title: Service
+        time:
+          type: string
+          format: date-time
+          title: Time
+      type: object
+      required:
+      - status
+      - service
+      - time
+      title: HealthResponse
