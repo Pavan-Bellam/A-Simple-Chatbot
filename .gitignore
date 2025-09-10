@@ -27,6 +27,3 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
-
-# Migrations cache / build artifacts
-alembic.ini
