@@ -2,15 +2,10 @@ import os
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is not set")
+from app.core.settings import settings
 
 engine = create_engine(
-    DATABASE_URL,
+    str(settings.database_url),
     pool_pre_ping= True,
     future = True,
 )
