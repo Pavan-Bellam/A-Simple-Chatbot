@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.schemas.health import HealthResponse
 from datetime import datetime,  timezone
-router = APIRouter(tags=['Health'])
+router = APIRouter()
 
 @router.get(
     '/health',
