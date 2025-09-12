@@ -4,7 +4,7 @@ import hmac, hashlib, base64
 from app.core.settings import settings
 import json
 from pathlib import Path
-
+from app.services.user import create_user
 client = boto3.client("cognito-idp", region_name=settings.cognito_region)
 
 def _secret_hash(username: str) -> str:
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     params = {
         "ClientId": settings.cognito_app_client_id,
-        "Username": username,  # must not be an email string if alias is enabled
+        "Username": username,  
         "Password": config["password"],
         "UserAttributes": [
             {"Name": "email", "Value": config["email"]},
@@ -46,6 +46,7 @@ if __name__ == "__main__":
 
     # Step 1: Sign up
     resp = client.sign_up(**params)
+    user_sub = resp['UserSub']
     print("Signup response:", resp)
 
     # Step 2: Prompt for confirmation code
@@ -61,4 +62,13 @@ if __name__ == "__main__":
         confirm_params["SecretHash"] = _secret_hash(username)
 
     confirm_resp = client.confirm_sign_up(**confirm_params)
+    if confirm_resp['ResponseMetadata']['HTTPStatusCode'] == 200:
+
+        create_user({
+            "sub": user_sub,
+            "email": config["email"],
+            "first_name": config["givenName"],
+            "last_name": config["familyName"]
+        })
+
     print("User confirmed:", confirm_resp)
