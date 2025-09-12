@@ -27,3 +27,7 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+
+
+#config
+scripts/cognito/config.json
