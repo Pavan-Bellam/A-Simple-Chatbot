@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     cognito_region: str
     cognito_user_pool_id: str
     cognito_app_client_secret: str
-
+    cognito_app_client_id: str
     
     @property
     def jwks_url(self) -> str:
