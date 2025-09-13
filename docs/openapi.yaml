@@ -104,6 +104,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/conversation/{id}:
+    patch:
+      tags:
+      - conversations
+      summary: Update a conversation(status and title)
+      operationId: update_conversation_api_v1_conversation__id__patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConversationRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateConversationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
     ConversationStatus:
@@ -192,6 +225,46 @@ components:
       - service
       - time
       title: HealthResponse
+    UpdateConversationRequest:
+      properties:
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/ConversationStatus'
+          - type: 'null'
+      type: object
+      title: UpdateConversationRequest
+    UpdateConversationResponse:
+      properties:
+        title:
+          type: string
+          title: Title
+        id:
+          type: string
+          format: uuid
+          title: Id
+        status:
+          $ref: '#/components/schemas/ConversationStatus'
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - title
+      - id
+      - status
+      - created_at
+      - updated_at
+      title: UpdateConversationResponse
     ValidationError:
       properties:
         loc:

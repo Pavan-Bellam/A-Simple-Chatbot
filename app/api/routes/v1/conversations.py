@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, Query
 from app.api.deps import get_user_dependency, get_db_session
 from app.models.conversation import Conversation
-from app.schemas.conversations import CreateConversationResponse, CreateConversationRequest, GetConversationsResponse
-from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
+from app.schemas.conversations import CreateConversationResponse, CreateConversationRequest, GetConversationsResponse, UpdateConversationRequest, UpdateConversationResponse
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Annotated,List
-
+from uuid import UUID
 
 router = APIRouter()
 
@@ -73,5 +73,42 @@ async def get_conversations(
     
 
 
+@router.patch(
+    '/conversation/{id}',
+    summary = 'Update a conversation(status and title)',
+    response_model = UpdateConversationResponse,
+    status_code=200
+)
+async def update_conversation(
+          id: UUID,
+          request: UpdateConversationRequest,
+          user= Depends(get_user_dependency),
+          db = Depends(get_db_session)
+          ):
+    try:
+        conversation = db.query(Conversation) \
+                    .filter(Conversation.id == id, Conversation.owner == user) \
+                    .first()
+        
+        if not conversation:
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND,
+                detail = 'Conversation not found'
+            )
+        
+        if request.title is not None:
+            conversation.title = request.title
+        if request.status is not None:
+            conversation.status = request.status
+
+        db.commit()
+        db.refresh(conversation)
+        return conversation
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code= HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = 'Failed to communicate with DB'
+        )
+    
 
 
