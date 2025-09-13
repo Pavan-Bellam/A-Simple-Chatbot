@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends
-from app.services.auth import jwt_dependency
-
+from app.api.deps import get_user_dependency
 
 router = APIRouter()
 
 @router.get('/secure')
-async def secure_route(payload=Depends(jwt_dependency)):
+async def secure_route(user=Depends(get_user_dependency)):
     return {
             "message" : "Access Granted",
-            "user_sub": payload['sub']
+            "user" : {
+                user
+            }
         }

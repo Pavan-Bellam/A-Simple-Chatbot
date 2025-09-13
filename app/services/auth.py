@@ -32,13 +32,3 @@ class JWTService:
 
 jwt_service = JWTService()
 
-async def jwt_dependency(request: Request):
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith('Bearer '):
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail = 'Missing or Invalid Authorization Header'
-        )
-    
-    token = auth_header.split(" ")[1]
-    return jwt_service.verify_token(token)
