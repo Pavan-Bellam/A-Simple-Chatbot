@@ -2,6 +2,7 @@ from fastapi import Request, HTTPException
 from starlette.status import HTTP_401_UNAUTHORIZED
 from app.services.auth import jwt_service
 from app.services.user import get_user_by_sub
+from app.db.engine import SessionLocal
 from fastapi import Depends
 
 async def jwt_dependency(request: Request):
@@ -20,3 +21,9 @@ async def get_user_dependency(sub: str = Depends(jwt_dependency)):
     user = get_user_by_sub(sub)
     return user
     
+def get_db_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
