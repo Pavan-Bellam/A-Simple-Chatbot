@@ -41,13 +41,12 @@ paths:
         \      - return the conversation ID and metadata with a stauts code of 201\
         \ when successful"
       operationId: create_conversation_api_v1_conversation_post
-      parameters:
-      - name: title
-        in: query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConversationRequest'
         required: true
-        schema:
-          type: string
-          title: Title
       responses:
         '201':
           description: Successful Response
@@ -61,8 +60,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/conversations:
+    get:
+      tags:
+      - conversations
+      summary: get latest `n` conversations
+      operationId: get_conversations_api_v1_conversations_get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          description: Number of records to skip
+          default: 0
+          title: Skip
+        description: Number of records to skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Maximum number of records to return
+          default: 10
+          title: Limit
+        description: Maximum number of records to return
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GetConversationsResponse'
+                title: Response Get Conversations Api V1 Conversations Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
+    ConversationStatus:
+      type: string
+      enum:
+      - active
+      - archived
+      title: ConversationStatus
+    CreateConversationRequest:
+      properties:
+        title:
+          type: string
+          title: Title
+      type: object
+      required:
+      - title
+      title: CreateConversationRequest
     CreateConversationResponse:
       properties:
         status:
@@ -70,6 +128,7 @@ components:
           title: Status
         conversation_id:
           type: string
+          format: uuid
           title: Conversation Id
         title:
           type: string
@@ -84,6 +143,28 @@ components:
       - title
       - created_at
       title: CreateConversationResponse
+    GetConversationsResponse:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        title:
+          type: string
+          title: Title
+        status:
+          $ref: '#/components/schemas/ConversationStatus'
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - title
+      - status
+      - created_at
+      title: GetConversationsResponse
     HTTPValidationError:
       properties:
         detail:
