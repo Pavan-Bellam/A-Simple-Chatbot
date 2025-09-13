@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
   title: Chatbot
-  description: Production-shaped chatbot API. Minimal endpoints for v0.1.
+  description: chatbot API.
   version: 0.1.0
 paths:
   /health:
     get:
       tags:
-      - Health
+      - health
       summary: liveness check
       description: returns 200 when the app is alive
       operationId: health_health_get
@@ -18,8 +18,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+  /api/v1/secure:
+    get:
+      tags:
+      - secure
+      summary: Secure Route
+      operationId: secure_route_api_v1_secure_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/v1/conversation:
+    post:
+      tags:
+      - conversations
+      summary: Create a new conversation
+      description: "Creates a new conversation for the authenticated user.\n     \
+        \                   - Requires a `title` in the request\n                \
+        \        - Conversation Status is Active when created\n                  \
+        \      - return the conversation ID and metadata with a stauts code of 201\
+        \ when successful"
+      operationId: create_conversation_api_v1_conversation_post
+      parameters:
+      - name: title
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Title
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateConversationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
+    CreateConversationResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        conversation_id:
+          type: string
+          title: Conversation Id
+        title:
+          type: string
+          title: Title
+        created_at:
+          type: string
+          title: Created At
+      type: object
+      required:
+      - status
+      - conversation_id
+      - title
+      - created_at
+      title: CreateConversationResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
     HealthResponse:
       properties:
         status:
@@ -38,3 +111,24 @@ components:
       - service
       - time
       title: HealthResponse
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
