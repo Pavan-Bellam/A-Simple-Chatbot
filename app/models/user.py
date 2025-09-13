@@ -2,6 +2,7 @@ import uuid
 from sqlalchemy import Column, String, TIMESTAMP, func
 from sqlalchemy.dialects.postgresql import UUID 
 from app.db.base import Base
+from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = 'users'
@@ -16,5 +17,7 @@ class User(Base):
         server_default=func.now(),
         nullable=False
     )
+
+    conversations = relationship("Conversation", back_populates="owner", cascade="all, delete-orphan")
 
     
