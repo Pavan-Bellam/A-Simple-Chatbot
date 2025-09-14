@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.deps import get_user_dependency, get_db_session
 from app.models.conversation import Conversation
 from app.schemas.conversations import CreateConversationResponse, CreateConversationRequest, GetConversationsResponse, UpdateConversationRequest, UpdateConversationResponse
-from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Annotated,List
@@ -112,3 +112,31 @@ async def update_conversation(
     
 
 
+@router.delete(
+    '/conversation/{id}',
+    summary='Deleate a conversation',
+    status_code=HTTP_204_NO_CONTENT
+)
+async def delete_conversation(
+    id: UUID,
+    user = Depends(get_user_dependency),
+    db = Depends(get_db_session)
+):
+    try:
+        conversation =  db.query(Conversation) \
+                        .filter(Conversation.id == id, Conversation.owner == user)\
+                        .first()
+        
+        if not conversation:
+            raise HTTPException(
+                status_code= HTTP_404_NOT_FOUND,
+                detail='Conversation not found'
+            )
+        db.delete(conversation)
+        db.commit()
+
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code= HTTP_500_INTERNAL_SERVER_ERROR,
+            detail= "Failed to communicate with DB"
+        )
