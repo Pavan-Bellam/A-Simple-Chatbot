@@ -30,4 +30,4 @@ class Conversation(Base):
     )
 
     owner = relationship("User", back_populates="conversations")
-    messages = relationship('Messsage', back_populates='conversation',cascade='all, delete-orphan')
+    messages = relationship('Message', back_populates='conversation',cascade='all, delete-orphan')
