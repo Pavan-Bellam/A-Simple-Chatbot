@@ -18,8 +18,8 @@ def create_message(
             role = message.role,
             content = message.content,
             token_count = message.token_count,
-            provider = message.provider,
-            model = message.model
+            provider = getattr(message,"provider",None),
+            model = getattr(message,"model",None)
         )
         db.add(new_message)
         db.commit()

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
-
+from typing import Optional
 from app.models.message import MessageRole
 
 
@@ -10,8 +10,8 @@ class MessageBase(BaseModel):
     content: str
     token_count: int
     message_count: int
-    provider: str
-    model: str
+    provider: Optional[str]
+    model: Optional[str]
 
 class MessageCreate(MessageBase):
     conversation_id: UUID
