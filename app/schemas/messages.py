@@ -10,8 +10,8 @@ class MessageBase(BaseModel):
     content: str
     token_count: int
     message_count: int
-    provider: Optional[str]
-    model: Optional[str]
+    provider: Optional[str] = None
+    model: Optional[str] = None
 
 class MessageCreate(MessageBase):
     conversation_id: UUID
