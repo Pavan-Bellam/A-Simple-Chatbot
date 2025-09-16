@@ -15,7 +15,6 @@ class MessageBase(BaseModel):
 
 class MessageCreate(MessageBase):
     conversation_id: UUID
-    message_count: int
 
 class MessageRead(MessageBase):
     id: UUID
