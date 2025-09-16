@@ -57,3 +57,13 @@ def get_messages(
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Unable to get data from DB"
         )
+    
+
+def get_k_messages(k: int, conversation_id: UUID, db: Session) -> List[MessageRead]:
+    """Return k latest messages in ASC order"""
+    messages = db.query(Message)\
+               .filter(Message.conversation_id == conversation_id)\
+               .order_by(Message.created_at.asc())\
+               .limit(k)\
+               .all()
+    return messages

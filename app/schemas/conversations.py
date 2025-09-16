@@ -37,3 +37,11 @@ class UpdateConversationResponse(BaseModel):
 
     class Config:
         from_attribures = True
+
+class ChatRequest(BaseModel):
+    user_input: str
+    provider: str
+    model: str
+
+class ChatResponse(BaseModel):
+    content: str
