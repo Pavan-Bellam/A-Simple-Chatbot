@@ -155,4 +155,5 @@ def chat(
     user= get_user_dependency,
 ):
     response = chat_service(db, conversation_id,request.user_input, model = request.model, provider=request.provider)
-    return ChatResponse(response)
+    print(response)
+    return ChatResponse(content=response)
