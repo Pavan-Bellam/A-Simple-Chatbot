@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from app.api.deps import get_user_dependency, get_db_session
 from app.models.conversation import Conversation
-from app.schemas.conversations import CreateConversationResponse, CreateConversationRequest, GetConversationsResponse, UpdateConversationRequest, UpdateConversationResponse
-from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT
+from app.services.chat import chat as chat_service
+from app.schemas.conversations import CreateConversationResponse, CreateConversationRequest, GetConversationsResponse, UpdateConversationRequest, UpdateConversationResponse,ChatResponse, ChatRequest
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT, HTTP_200_OK
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Annotated,List
@@ -140,3 +141,19 @@ async def delete_conversation(
             status_code= HTTP_500_INTERNAL_SERVER_ERROR,
             detail= "Failed to communicate with DB"
         )
+    
+@router.post(
+    '/conversation/{conversation_id}/chat',
+    summary= "Send a message to chat with the llm",
+    response_model=ChatResponse,
+    status_code=HTTP_200_OK
+)
+def chat(
+    conversation_id: UUID,
+    request: ChatRequest,
+    db=Depends(get_db_session),
+    user= get_user_dependency,
+):
+    response = chat_service(db, conversation_id,request.user_input, model = request.model, provider=request.provider)
+    print(response)
+    return ChatResponse(content=response)

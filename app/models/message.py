@@ -28,3 +28,4 @@ class Message(Base):
     )
 
     conversation = relationship('Conversation', back_populates="messages")
+    embeddings = relationship('MessageEmbedding', back_populates="message", cascade='all, delete')

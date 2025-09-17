@@ -137,8 +137,198 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - conversations
+      summary: Deleate a conversation
+      operationId: delete_conversation_api_v1_conversation__id__delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/conversation/{conversation_id}/chat:
+    post:
+      tags:
+      - conversations
+      summary: Send a message to chat with the llm
+      operationId: chat_api_v1_conversation__conversation_id__chat_post
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: user
+        in: query
+        required: false
+        schema:
+          title: User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/message:
+    post:
+      tags:
+      - messages
+      summary: Insert a message into messages table
+      operationId: create_message_api_v1_message_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - messages
+      summary: get top `k` messages
+      operationId: get_messages_api_v1_message_get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          description: Number of records to skip
+          default: 0
+          title: Skip
+        description: Number of records to skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Maximum number of records to return
+          default: 10
+          title: Limit
+        description: Maximum number of records to return
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetMessageRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageRead'
+                title: Response Get Messages Api V1 Message Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1message/{conversation_id}/{message_id}:
+    delete:
+      tags:
+      - messages
+      summary: Delete a message
+      operationId: delete_message_api_v1message__conversation_id___message_id__delete
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
+    ChatRequest:
+      properties:
+        user_input:
+          type: string
+          title: User Input
+        provider:
+          type: string
+          title: Provider
+        model:
+          type: string
+          title: Model
+      type: object
+      required:
+      - user_input
+      - provider
+      - model
+      title: ChatRequest
+    ChatResponse:
+      properties:
+        content:
+          type: string
+          title: Content
+      type: object
+      required:
+      - content
+      title: ChatResponse
     ConversationStatus:
       type: string
       enum:
@@ -198,6 +388,16 @@ components:
       - status
       - created_at
       title: GetConversationsResponse
+    GetMessageRequest:
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          title: Conversation Id
+      type: object
+      required:
+      - conversation_id
+      title: GetMessageRequest
     HTTPValidationError:
       properties:
         detail:
@@ -225,6 +425,93 @@ components:
       - service
       - time
       title: HealthResponse
+    MessageCreate:
+      properties:
+        role:
+          $ref: '#/components/schemas/MessageRole'
+        content:
+          type: string
+          title: Content
+        token_count:
+          type: integer
+          title: Token Count
+        message_count:
+          type: integer
+          title: Message Count
+        provider:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider
+        model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model
+        conversation_id:
+          type: string
+          format: uuid
+          title: Conversation Id
+      type: object
+      required:
+      - role
+      - content
+      - token_count
+      - message_count
+      - conversation_id
+      title: MessageCreate
+    MessageRead:
+      properties:
+        role:
+          $ref: '#/components/schemas/MessageRole'
+        content:
+          type: string
+          title: Content
+        token_count:
+          type: integer
+          title: Token Count
+        message_count:
+          type: integer
+          title: Message Count
+        provider:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider
+        model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model
+        id:
+          type: string
+          format: uuid
+          title: Id
+        conversation_id:
+          type: string
+          format: uuid
+          title: Conversation Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - role
+      - content
+      - token_count
+      - message_count
+      - id
+      - conversation_id
+      - created_at
+      title: MessageRead
+    MessageRole:
+      type: string
+      enum:
+      - system
+      - ai
+      - user
+      title: MessageRole
     UpdateConversationRequest:
       properties:
         title:
