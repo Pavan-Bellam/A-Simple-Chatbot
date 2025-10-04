@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # FastAPI Application - Development with hot reload
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: development
+    container_name: chatbot-api-dev
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/chatbot_db
+      - ENVIRONMENT=development
+      - DEBUG=true
+    env_file:
+      - ../../.env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount only the app directory for real-time code changes
+      - ../../app:/app/app:ro
+      - ../../tests:/app/tests:ro
+      - ../../pyproject.toml:/app/pyproject.toml:ro
+      - ../../uv.lock:/app/uv.lock:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    # Override to ensure reload works with volume mounting
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app"]
+
+  # PostgreSQL with pgvector - For local development and CI/CD
+  db:
+    extends:
+      file: ../compose/db.compose.yml
+      service: db
+    networks:
+      - chatbot-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  chatbot-network:
+    driver: bridge
