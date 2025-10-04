@@ -1,0 +1,53 @@
+version: '3.8'
+
+# Docker Compose configuration for CI/CD testing
+# Uses the same database containers as local development
+
+services:
+  # FastAPI Application for testing
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: development
+    container_name: chatbot-api-ci
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@db:5432/chatbot_test_db
+      - ENVIRONMENT=testing
+      - DEBUG=false
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - chatbot-test-network
+    # Override command for testing
+    command: ["uv", "run", "pytest", "tests/", "-v", "--tb=short"]
+
+  # PostgreSQL with pgvector for testing
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: chatbot-db-ci
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: chatbot_test_db
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d chatbot_test_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - chatbot-test-network
+    tmpfs:
+      # Use tmpfs for faster test database (data doesn't persist)
+      - /var/lib/postgresql/data
+
+networks:
+  chatbot-test-network:
+    driver: bridge

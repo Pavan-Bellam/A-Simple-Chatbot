@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
 from typing import Optional
@@ -17,11 +17,11 @@ class MessageCreate(MessageBase):
     conversation_id: UUID
 
 class MessageRead(MessageBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: UUID
     conversation_id: UUID
     created_at: datetime
-    class Config:
-        from_attributes = True
 
 class GetMessageRequest(BaseModel):
     conversation_id: UUID

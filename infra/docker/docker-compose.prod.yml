@@ -1,0 +1,37 @@
+# Production Docker Compose - For reference only
+# In production, only the backend image is deployed to ECS with ALB in front
+# Database and other services are managed externally
+
+version: '3.8'
+
+services:
+  # FastAPI Application - Production (ECS deployment reference)
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: production
+    container_name: chatbot-api-prod
+    environment:
+      # In ECS, these come from environment variables/secrets
+      - ENVIRONMENT=production
+      - DATABASE_URL=${DATABASE_URL}  # External RDS database
+    ports:
+      - "8000:8000"
+    restart: always
+
+    # Example resource limits for ECS reference
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+# Note: In actual ECS deployment:
+# - Database is external RDS PostgreSQL with pgvector
+# - ALB (Application Load Balancer) handles load balancing and SSL termination
+# - This file is mainly for building the production image
+# - ECS task definition handles the actual deployment configuration

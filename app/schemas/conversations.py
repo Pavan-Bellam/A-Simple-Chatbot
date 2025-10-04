@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from app.models.conversation import ConversationStatus
 from datetime import datetime
@@ -15,28 +15,25 @@ class CreateConversationRequest(BaseModel):
 
 
 class GetConversationsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: UUID
     title: str
     status: ConversationStatus
     created_at: datetime
-    
-
-    class Config:
-        from_attributes = True
 
 class UpdateConversationRequest(BaseModel):
     title: Optional[str] = None
     status: Optional[ConversationStatus] = None
 
 class UpdateConversationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     title: str
     id: UUID
     status: ConversationStatus
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attribures = True
 
 class ChatRequest(BaseModel):
     user_input: str

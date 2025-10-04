@@ -30,17 +30,17 @@ async def create_message(
     status_code=HTTP_200_OK
 )
 async def get_messages(
-    request: GetMessageRequest,
+    conversation_id: Annotated[UUID, Query(description='Conversation ID to get messages from')],
     skip: Annotated[int, Query(ge=0,description='Number of records to skip')]=0,
     limit: Annotated[int, Query(ge=1,le=100, description='Maximum number of records to return')] = 10,
     user = Depends(get_user_dependency),
     db = Depends(get_db_session)
 ):
-    return get_message_service(db, request.conversation_id, skip, limit)
+    return get_message_service(db, conversation_id, skip, limit)
 
 @router.delete(
-    'message/{conversation_id}/{message_id}',
-    summary= 'Delete a message',
+    '/message/{conversation_id}/{message_id}',
+    summary='Delete a message',
     status_code=HTTP_204_NO_CONTENT
 )
 async def delete_message(
@@ -54,9 +54,9 @@ async def delete_message(
                   .filter(Message.conversation_id == conversation_id, Message.id == message_id) \
                   .first()
         if not message:
-            return HTTPException(
+            raise HTTPException(
                 status_code=HTTP_404_NOT_FOUND,
-                detail= "No message with given id in given conversation id"
+                detail="No message with given id in given conversation id"
             )
         db.delete(message)
         db.commit()

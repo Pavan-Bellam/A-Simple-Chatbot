@@ -26,8 +26,8 @@ router = APIRouter()
 async def create_conversation(request: CreateConversationRequest, user=Depends(get_user_dependency), db=Depends(get_db_session)):
     try: 
         new_conversation = Conversation(
-            owner = user,
-            title = request.title,
+            user_id=user.id,
+            title=request.title,
         )
         db.add(new_conversation)
         db.commit()
@@ -61,7 +61,7 @@ async def get_conversations(
         ): 
     try:
         conversations = db.query(Conversation) \
-                        .filter(Conversation.owner == user) \
+                        .filter(Conversation.user_id == user.id) \
                         .offset(skip) \
                         .limit(limit) \
                         .all()
@@ -88,7 +88,7 @@ async def update_conversation(
           ):
     try:
         conversation = db.query(Conversation) \
-                    .filter(Conversation.id == id, Conversation.owner == user) \
+                    .filter(Conversation.id == id, Conversation.user_id == user.id) \
                     .first()
         
         if not conversation:
@@ -124,8 +124,8 @@ async def delete_conversation(
     db = Depends(get_db_session)
 ):
     try:
-        conversation =  db.query(Conversation) \
-                        .filter(Conversation.id == id, Conversation.owner == user)\
+        conversation = db.query(Conversation) \
+                        .filter(Conversation.id == id, Conversation.user_id == user.id) \
                         .first()
         
         if not conversation:
@@ -152,7 +152,7 @@ def chat(
     conversation_id: UUID,
     request: ChatRequest,
     db=Depends(get_db_session),
-    user= get_user_dependency,
+    user=Depends(get_user_dependency),
 ):
     response = chat_service(db, conversation_id,request.user_input, model = request.model, provider=request.provider)
     print(response)

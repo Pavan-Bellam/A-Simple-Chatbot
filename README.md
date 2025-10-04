@@ -1,177 +1,204 @@
-# README: Scalable Chatbot Project
+# A Simple Chatbot
 
-This repository contains a scalable chatbot designed to handle millions of users, leveraging FastAPI, PostgreSQL, AWS Cognito, and vector databases for efficient context management. Below are instructions for setup, development, and database management.
+A scalable FastAPI-based chatbot designed for production deployment on AWS ECS with intelligent context management using vector databases.
 
-## Project Overview
+## 🎯 Overview
 
-- **Purpose**: Build a chatbot with scalable architecture for millions of concurrent users.
-- **Key Features**:
-  - **Context Management**: Hybrid approach with recent message retention and vector DB retrieval.
-  - **Backend**: FastAPI with Uvicorn.
-  - **Database**: PostgreSQL with Alembic migrations.
-  - **Authentication**: AWS Cognito for JWT-based auth.
-  - **Package Management**: UV for fast dependency resolution.
-- **Status**: Production deployment TBD.
+- **Backend**: FastAPI with JWT authentication via AWS Cognito
+- **Database**: PostgreSQL with pgvector extension for semantic search
+- **Context Management**: Hybrid approach with recent messages + vector similarity search
+- **Deployment**: Containerized for AWS ECS with external RDS
+- **Development**: Docker with hot reload for rapid iteration
 
-## Context Management Strategy
+## 🏗️ Architecture
 
-To ensure scalability and low-latency conversations:
+### Context Management Strategy
+- **Recent Messages**: Last 20 messages for immediate context
+- **Semantic Search**: Vector embeddings for relevant historical context
+- **Intelligent Retrieval**: Combines recent + relevant messages for LLM prompts
 
-- **Hot Path (Last K Messages)**: Stores the most recent `k` messages (e.g., `k=10`) in memory for quick access.
-- **Summary**: Maintains a rolling summary of all prior messages (from first to `total - k`). Updated incrementally using a language model (e.g., OpenAI or local LLM).
-- **Relevant Info Retrieval**: Uses a postgress vectorDB for semantic search of historical or external data.
-  - **Setup**: Embed messages with Sentence Transformers, store with metadata (e.g., `user_id`, `timestamp`), query with cosine similarity (>0.7).
-  - **Fallback**: Defaults to hot path summary if no relevant vectors are found.
+### Production Stack
+- **API**: FastAPI containers on ECS behind ALB
+- **Database**: RDS PostgreSQL with pgvector
+- **Authentication**: AWS Cognito User Pools
+- **LLM**: OpenAI API integration
 
+## 📁 Project Structure
 
-## Development Setup
+```
+A-Simple-Chatbot/
+├── app/                       # FastAPI application
+│   ├── api/                   # API routes and dependencies
+│   ├── core/                  # Core configurations
+│   ├── models/                # SQLAlchemy models
+│   ├── schemas/               # Pydantic schemas
+│   └── services/              # Business logic
+├── docker/                    # Docker configurations
+│   ├── Dockerfile             # Multi-stage build
+│   ├── docker-compose.yml     # Development setup
+│   ├── docker-compose.ci.yml  # CI/CD testing
+│   └── scripts/               # Management scripts
+├── tests/                     # Comprehensive test suite
+├── alembic/                   # Database migrations
+├── scripts/                   # Utility scripts
+├── docs/                      # Architecture documentation
+└── Makefile                   # Convenience commands
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
+- Docker & Docker Compose
+- Python 3.12+ (for local development)
 - Git
-- Docker and Docker Compose
-- Python 3.10+
 
-### Step 1: Clone and Install Dependencies
-1. Clone the repository:
+### Development Setup
+
+1. **Clone and setup environment:**
    ```bash
    git clone <repo-url>
-   cd <project-root>
+   cd A-Simple-Chatbot
+   make setup
    ```
-2. Install UV:
-   - **macOS/Linux**:
-     ```bash
-     curl -LsSf https://astral.sh/uv/install.sh | sh
-     ```
-   - **Windows (PowerShell)**:
-     ```bash
-     powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-     ```
-   - Verify: `uv --version`
-3. Set up project:
+
+2. **Configure environment variables:**
    ```bash
-   uv sync
+   # Edit the generated .env file
+   nano .env
    ```
+   Required variables:
+   - `DATABASE_URL` (auto-configured for development)
+   - `COGNITO_*` (your AWS Cognito configuration)
+   - `OPENAI_API_KEY` (your OpenAI API key)
 
-### Step 2: Environment Configuration
-1. Copy template:
+3. **Start development environment:**
    ```bash
-   cp .env.example .env
+   make dev
    ```
-2. Edit `.env`:
+   This starts:
+   - FastAPI with hot reload on http://localhost:8000
+   - PostgreSQL with pgvector on localhost:5432
+   - Real-time code changes via volume mounting
 
-
-## Database Setup
-
-Uses PostgreSQL with Docker Compose and Alembic for migrations.
-
-### Step 1: Build and Start Database
-1. Navigate:
-   ```bash
-   cd infra/compose
-   ```
-2. Build:
-   ```bash
-   docker compose -f db.compose.yaml build
-   ```
-3. Start:
-   ```bash
-   docker compose -f db.compose.yaml up -d
-   ```
-   - Verify: `docker compose -f db.compose.yaml logs` or connect via `psql`.
-   - Stop: `docker compose -f db.compose.yaml down`.
-
-### Step 2: Run Migrations
-Alembic is configured in the root `alembic` folder (`alembic.ini`, `env.py` use `DB_URL`).
-   ```
-     Apply migrations:
+4. **Run database migrations:**
    ```bash
    uv run alembic upgrade head
    ```
 
-### Step 3: Insert Initial Data
-Alembic is primarily for schema changes; use sparingly for seeding.
-1. Create migration:
-   ```bash
-   uv run alembic revision --autogenerate -m "seed_initial_data"
-   
-2. Apply:
-   ```bash
-   uv run alembic upgrade head
-   ```
+5. **Access the application:**
+   - API: http://localhost:8000
+   - Interactive docs: http://localhost:8000/docs
+   - Health check: http://localhost:8000/health
 
-## Running the Application
+## 🛠️ Development Commands
 
-From root:
+### Using Makefile (Recommended)
 ```bash
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+make dev              # Start development environment
+make test             # Run test suite
+make logs-api         # View API logs
+make stop             # Stop all services
+make prod-build       # Build production image
 ```
-- Access: `http://localhost:8000`
-- API Docs: `http://localhost:8000/docs`
-- Logs: Tail or use Sentry.
 
-## Authentication (Getting Tokens)
-
-Uses AWS Cognito for JWT-based auth.
-
-### Step 1: Cognito Config
-1. Copy template:
-   ```bash
-   cp scripts/cognito/config_template.py scripts/cognito/config.py
-   ```
-2. Edit `config.py`
-
-### Step 2: Signup
-Use a **real email** (Cognito sends confirmation):
+### Manual Commands
 ```bash
-uv run python -m scripts.cognito.signup
-```
-- Confirm via email link.
+# Development
+./docker/scripts/start.sh
 
-### Step 3: Login
+# Testing
+./docker/scripts/start.sh --test
+
+# Production build
+./docker/scripts/build.sh --env prod
+```
+
+## 🗄️ Database Management
+
+### Migrations with Alembic
 ```bash
-uv run python -m scripts.cognito.login 
+# Create new migration
+uv run alembic revision --autogenerate -m "description"
+
+# Apply migrations
+uv run alembic upgrade head
+
+# Rollback migration
+uv run alembic downgrade -1
 ```
-- Output: Access token for `Authorization: Bearer <token>`.
-- Refresh: Re-run login
 
-## Info for Developers
+### Database Schema
+- **Users**: Cognito integration with user profiles
+- **Conversations**: Chat sessions with metadata
+- **Messages**: Individual messages with embeddings
+- **Message Embeddings**: Vector representations for semantic search
 
-### Updating OpenAPI Schema
-Regenerate `openapi.yaml`:
+## 🔐 Authentication
+
+Uses AWS Cognito for JWT-based authentication:
+
+1. **Configure Cognito settings** in `.env`
+2. **Use signup/login scripts:**
+   ```bash
+   # Signup (requires real email for confirmation)
+   uv run python -m scripts.cognito.signup
+
+   # Login (returns JWT token)
+   uv run python -m scripts.cognito.login
+   ```
+3. **Use token in API calls:**
+   ```bash
+   curl -H "Authorization: Bearer <token>" http://localhost:8000/api/v1/secure
+   ```
+
+## 🧪 Testing
+
+Comprehensive test suite with different environments:
+
 ```bash
-uv run python -m scripts.export_openapi
+# Run all tests
+make test
+
+# Run specific test files
+uv run pytest tests/test_api.py -v
+
+# Run tests with coverage
+uv run pytest --cov=app tests/
 ```
-- Run after changes in `app/routers` or `app/models`.
-- Commit updated YAML.
 
-### Updating Database Tables
-1. Edit `app/models/` (e.g., add columns).
-2. Generate migration:
-   ```bash
-   uv run alembic revision --autogenerate -m "add_new_column_to_users"
-   ```
-3. Review `alembic/versions/<generated_file>.py`.
-4. Apply:
-   ```bash
-   uv run alembic upgrade head
-   ```
-5. Downgrade (if needed):
-   ```bash
-   uv run alembic downgrade -1
-   ```
+Test environments:
+- **Development**: Full integration tests with real database
+- **CI/CD**: Automated testing with temporary containers
+- **Unit Tests**: Fast isolated tests for business logic
 
-**Best Practices**:
-- Test migrations in dev DB.
-- Use `--autogenerate` for most changes; edit manually for complex cases.
-- Version control `alembic/versions/`.
 
-## Production Deployment
+## 📊 Monitoring & Observability
 
-TBD. Planned:
-- Dockerized app + DB + vector DB.
-- AWS ECS/EKS or Kubernetes.
-- Scaling: Horizontal pods, Redis caching, auto-scaling.
-- Monitoring: Prometheus, Grafana, CloudWatch.
-- CI/CD: GitHub Actions.
+- **Health Checks**: Built-in health endpoint for ECS
+- **Logging**: Structured JSON logs for CloudWatch
+- **Metrics**: Application performance monitoring ready
+- **Error Tracking**: Sentry integration available
 
-For questions, contact the team!
+## 🤝 Contributing
+
+1. **Setup development environment** (see Quick Start)
+2. **Create feature branch:** `git checkout -b feature/new-feature`
+3. **Run tests:** `make test`
+4. **Submit pull request** with tests and documentation
+
+### Code Quality
+- **Linting**: Configured for consistent code style
+- **Type Hints**: Full typing coverage required
+- **Testing**: Comprehensive test coverage expected
+- **Documentation**: Update relevant docs with changes
+
+## 📚 Additional Resources
+
+- **API Documentation**: Available at `/docs` when running
+- **Architecture Docs**: See `docs/` directory
+- **Docker Guide**: See `docker/README.md`
+- **Database Schema**: Generated diagrams in `docs/`
+
+
+---
+

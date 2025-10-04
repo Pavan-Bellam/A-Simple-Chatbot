@@ -24,9 +24,13 @@ class JWTService:
             )
             return payload
         except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail = 'Token Expired')
+            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail='Token Expired')
         except jwt.InvalidKeyError as e:
             raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")
+        except jwt.DecodeError as e:
+            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=f"Invalid token format: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Token verification failed")
 
 
 
