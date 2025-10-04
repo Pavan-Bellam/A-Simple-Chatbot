@@ -30,7 +30,7 @@ def create_message(
         db.rollback()
         raise HTTPException(
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=' Failed to Create new message'
+            detail="Failed to Create new message"
         )
     
 def get_messages(
@@ -49,13 +49,13 @@ def get_messages(
         if not messages:
             raise HTTPException(
                 status_code=HTTP_404_NOT_FOUND,
-                detail="No messsages for given conversation id"
+                detail="No messages for given conversation id"
             )
         return messages
     except SQLAlchemyError:
         raise HTTPException(
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
-            detail = "Unable to get data from DB"
+            detail="Unable to get data from DB"
         )
     
 

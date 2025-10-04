@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Relationship
+from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from uuid import uuid4
 from app.db.base import Base
@@ -14,4 +14,4 @@ class MessageEmbedding(Base):
     chunk_index = Column(Integer, nullable=False)
     text_chunk = Column(String, nullable=False)
     embedding = Column(Vector(1024), nullable=False)
-    message = Relationship("Message", back_populates="embeddings")
+    message = relationship("Message", back_populates="embeddings")
