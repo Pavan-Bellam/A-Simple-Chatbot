@@ -1,0 +1,30 @@
+# Base image with all heavy dependencies pre-installed
+# This speeds up development and CI builds significantly
+
+FROM python:3.12-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for faster dependency management
+RUN pip install --no-cache-dir uv
+
+# Set working directory
+WORKDIR /app
+
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install all dependencies (both production and dev)
+RUN uv sync --frozen
+
+# This image serves as the base for both development and production builds
