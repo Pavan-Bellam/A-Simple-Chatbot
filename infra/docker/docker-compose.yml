@@ -7,6 +7,8 @@ services:
       context: ../..
       dockerfile: infra/docker/Dockerfile
       target: development
+      args:
+        BASE_IMAGE: hero7hero/simple-chatbot:latest
     container_name: chatbot-api-dev
     environment:
       - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/chatbot_db
@@ -17,11 +19,12 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Mount only the app directory for real-time code changes
+      # Mount source code and config files for development, testing, and linting
       - ../../app:/app/app:ro
       - ../../tests:/app/tests:ro
       - ../../pyproject.toml:/app/pyproject.toml:ro
       - ../../uv.lock:/app/uv.lock:ro
+      - ../../.flake8:/app/.flake8:ro
     depends_on:
       db:
         condition: service_healthy
@@ -31,16 +34,30 @@ services:
     # Override to ensure reload works with volume mounting
     command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app"]
 
-  # PostgreSQL with pgvector - For local development and CI/CD
+  # PostgreSQL with pgvector - For local development
   db:
-    extends:
-      file: ../compose/db.compose.yml
-      service: db
+    image: pgvector/pgvector:pg17
+    container_name: chatbot_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: chatbot_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
     networks:
       - chatbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_user -d chatbot_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 
 volumes:
-  postgres_data:
+  pgdata:
     driver: local
 
 networks:

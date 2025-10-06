@@ -1,49 +1,27 @@
 # Lightweight Dockerfile for A Simple Chatbot Backend
+# Uses pre-built base image with all dependencies
 
-# Base image with Python 3.12
-FROM python:3.12-slim AS base
+# Use custom base image with all dependencies pre-installed
+# Build base: docker build -f infra/docker/Dockerfile.base -t hero7hero/simple-chatbot:latest .
+ARG BASE_IMAGE=hero7hero/simple-chatbot:latest
+FROM ${BASE_IMAGE} AS base
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for faster dependency management
-RUN pip install --no-cache-dir uv
-
-# Set working directory
-WORKDIR /app
-
-# Environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
-
-# Stage for development (with dev dependencies)
+# Stage for development
 FROM base AS development
 
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
-
-# Install all dependencies including dev dependencies
-RUN uv sync --frozen
+# Copy source code and tests
+COPY ./app ./app
+COPY ./tests ./tests
+COPY ./.flake8 ./.flake8
 
 # Expose port
 EXPOSE 8000
 
-# Development command with hot reload (source code mounted as volume)
+# Development command with hot reload (can be overridden by docker-compose volumes)
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
-# Stage for production (lightweight)
+# Stage for production
 FROM base AS production
-
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
-
-# Install only production dependencies
-RUN uv sync --frozen --no-dev
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash --uid 1000 app \

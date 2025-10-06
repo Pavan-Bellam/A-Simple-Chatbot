@@ -11,6 +11,8 @@ services:
       context: ../..
       dockerfile: infra/docker/Dockerfile
       target: production
+      args:
+        BASE_IMAGE: hero7hero/simple-chatbot:latest
     container_name: chatbot-api-prod
     environment:
       # In ECS, these come from environment variables/secrets
