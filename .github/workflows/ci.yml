@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    steps: 
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -23,7 +23,17 @@ jobs:
             key: ${{runner.os}}-buildx-${{github.sha}}
             restore-keys: |
               ${{runner.os}}-buildx-
-      
+
+      - name: Create .env file from secrets
+        run: |
+          cat > .env << EOF
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          COGNITO_REGION=${{ secrets.COGNITO_REGION }}
+          COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }}
+          COGNITO_APP_CLIENT_ID=${{ secrets.COGNITO_APP_CLIENT_ID }}
+          COGNITO_APP_CLIENT_SECRET=${{ secrets.COGNITO_APP_CLIENT_SECRET }}
+          EOF
+
       - name: Build test container and run tests
         run : make test
               

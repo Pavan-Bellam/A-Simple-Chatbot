@@ -45,10 +45,10 @@ dev: ## Run development environment (API + DB)
 
 # Testing
 test: ## Run tests in CI environment
-	$(SCRIPTS)/test$(SCRIPT_EXT)
+	@bash $(SCRIPTS)/test.sh
 
 ci: ## Run full CI pipeline (lint + format check + tests)
-	$(SCRIPTS)/ci$(SCRIPT_EXT)
+	@bash $(SCRIPTS)/ci.sh
 
 # Cleanup
 clean: ## Clean up Docker resources
