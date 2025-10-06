@@ -10,14 +10,14 @@ echo ""
 
 # Build the image once
 echo "[CI] Building Docker image..."
-docker-compose -f docker-compose.ci.yml build
+docker compose -f docker-compose.ci.yml build
 echo ""
 
 # Run lint check
 echo "[CI] Running lint check..."
-if ! docker-compose -f docker-compose.ci.yml run --rm api uv run flake8 app tests; then
+if ! docker compose -f docker-compose.ci.yml run --rm api uv run flake8 app tests; then
     echo "[CI] Linting failed!"
-    docker-compose -f docker-compose.ci.yml down -v
+    docker compose -f docker-compose.ci.yml down -v
     exit 1
 fi
 echo "[CI] Linting passed!"
@@ -25,14 +25,14 @@ echo ""
 
 # Run format check
 echo "[CI] Checking code formatting..."
-if ! docker-compose -f docker-compose.ci.yml run --rm api uv run black --check app tests; then
+if ! docker compose -f docker-compose.ci.yml run --rm api uv run black --check app tests; then
     echo "[CI] Black formatting check failed!"
-    docker-compose -f docker-compose.ci.yml down -v
+    docker compose -f docker-compose.ci.yml down -v
     exit 1
 fi
-if ! docker-compose -f docker-compose.ci.yml run --rm api uv run isort --check-only app tests; then
+if ! docker compose -f docker-compose.ci.yml run --rm api uv run isort --check-only app tests; then
     echo "[CI] isort formatting check failed!"
-    docker-compose -f docker-compose.ci.yml down -v
+    docker compose -f docker-compose.ci.yml down -v
     exit 1
 fi
 echo "[CI] Formatting check passed!"
@@ -41,13 +41,13 @@ echo ""
 # Run tests (disable set -e to capture exit code)
 echo "[CI] Running tests..."
 set +e
-docker-compose -f docker-compose.ci.yml up --abort-on-container-exit
+docker compose -f docker-compose.ci.yml up --abort-on-container-exit
 TEST_EXIT_CODE=$?
 set -e
 echo ""
 
 # Always cleanup
-docker-compose -f docker-compose.ci.yml down -v
+docker compose -f docker-compose.ci.yml down -v
 
 # Report results
 echo "========================================"

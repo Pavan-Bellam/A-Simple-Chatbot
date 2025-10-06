@@ -7,12 +7,12 @@ cd "$(dirname "$0")/.."
 
 # Run tests and capture exit code (disable set -e temporarily)
 set +e
-docker-compose -f docker-compose.ci.yml up --build --abort-on-container-exit
+docker compose -f docker-compose.ci.yml up --build --abort-on-container-exit
 TEST_EXIT_CODE=$?
 set -e
 
 # Always cleanup
-docker-compose -f docker-compose.ci.yml down -v
+docker compose -f docker-compose.ci.yml down -v
 
 # Exit with the test exit code
 if [ $TEST_EXIT_CODE -eq 0 ]; then
