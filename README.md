@@ -33,15 +33,18 @@ A-Simple-Chatbot/
 │   ├── models/                # SQLAlchemy models
 │   ├── schemas/               # Pydantic schemas
 │   └── services/              # Business logic
-├── docker/                    # Docker configurations
-│   ├── Dockerfile             # Multi-stage build
-│   ├── docker-compose.yml     # Development setup
-│   ├── docker-compose.ci.yml  # CI/CD testing
-│   └── scripts/               # Management scripts
+├── infra/                     # Infrastructure
+│   └── docker/                # Docker configurations
+│       ├── Dockerfile         # Multi-stage build
+│       ├── docker-compose.yml # Development setup
+│       ├── docker-compose.ci.yml  # CI/CD testing
+│       └── scripts/           # Management scripts
 ├── tests/                     # Comprehensive test suite
 ├── alembic/                   # Database migrations
 ├── scripts/                   # Utility scripts
 ├── docs/                      # Architecture documentation
+├── pyproject.toml             # Project dependencies & tool configs
+├── .flake8                    # Flake8 configuration
 └── Makefile                   # Convenience commands
 ```
 
@@ -49,8 +52,8 @@ A-Simple-Chatbot/
 
 ### Prerequisites
 - Docker & Docker Compose
-- Python 3.12+ (for local development)
 - Git
+- **Note**: Python is NOT required locally - everything runs in Docker!
 
 ### Development Setup
 
@@ -58,12 +61,14 @@ A-Simple-Chatbot/
    ```bash
    git clone <repo-url>
    cd A-Simple-Chatbot
-   make setup
    ```
 
 2. **Configure environment variables:**
    ```bash
-   # Edit the generated .env file
+   # Copy example env file
+   cp infra/docker/.env.example .env
+
+   # Edit the .env file
    nano .env
    ```
    Required variables:
@@ -80,6 +85,8 @@ A-Simple-Chatbot/
    - PostgreSQL with pgvector on localhost:5432
    - Real-time code changes via volume mounting
 
+   **First-time setup**: The first run will automatically pull the pre-built base image (`hero7hero/simple-chatbot:latest`) from Docker Hub, which contains all Python dependencies. This is a one-time download.
+
 4. **Run database migrations:**
    ```bash
    uv run alembic upgrade head
@@ -93,25 +100,85 @@ A-Simple-Chatbot/
 ## 🛠️ Development Commands
 
 ### Using Makefile (Recommended)
+
+#### Docker & Services
 ```bash
-make dev              # Start development environment
-make test             # Run test suite
-make logs-api         # View API logs
-make stop             # Stop all services
-make prod-build       # Build production image
+make dev              # Start development environment (API + DB)
+make test             # Run test suite in CI environment
+make build            # Build the backend application
+make clean            # Clean up Docker resources
 ```
 
-### Manual Commands
+#### Code Quality (runs inside Docker)
+```bash
+make format           # Format code with black and isort
+make lint             # Run flake8 linter
+make lint-check       # Check formatting without modifying
+make fix              # Auto-fix code formatting and imports
+```
+**Note**: All code quality commands run inside Docker containers, so you don't need Python installed locally!
+
+#### Base Image Management
+```bash
+make build-base       # Build base image with all dependencies
+make push-base        # Build and push base image to Docker Hub
+```
+
+### Manual Scripts
 ```bash
 # Development
-./docker/scripts/start.sh
+./infra/docker/scripts/dev.sh          # Linux/Mac
+.\infra\docker\scripts\dev.bat         # Windows
 
 # Testing
-./docker/scripts/start.sh --test
+./infra/docker/scripts/test.sh
+.\infra\docker\scripts\test.bat
 
-# Production build
-./docker/scripts/build.sh --env prod
+# Build application
+./infra/docker/scripts/build.sh
+.\infra\docker\scripts\build.bat
+
+# Base image (maintainers only)
+./infra/docker/scripts/build-base.sh
+.\infra\docker\scripts\build-base.bat
 ```
+
+## 🐳 Docker Base Image
+
+This project uses a **pre-built base image** (`hero7hero/simple-chatbot:latest`) that contains all heavy Python dependencies (langchain, sentence-transformers, etc.). This significantly speeds up builds for both development and CI/CD.
+
+### For Developers (Normal Usage)
+- **You don't need to build the base image!** It's automatically pulled from Docker Hub when you run `make dev` or `make test`.
+- All builds are fast because they use the cached base image.
+
+### For Maintainers (Dependency Updates)
+**⚠️ IMPORTANT**: Only rebuild the base image when adding/updating major dependencies in `pyproject.toml`.
+
+```bash
+# 1. Update dependencies in pyproject.toml
+# 2. Rebuild the base image locally
+make build-base
+
+# 3. Test that everything works
+make test
+
+# 4. Push to Docker Hub (requires authentication)
+docker login
+make push-base
+```
+
+**Guidelines**:
+- **DO rebuild** when: Adding new packages, upgrading major dependencies (langchain, transformers, etc.)
+- **DON'T rebuild** for: Minor version bumps, code changes, or configuration updates
+- Always test locally before pushing to Docker Hub
+- Coordinate with team before pushing new base images to avoid breaking CI/CD
+
+### Base Image Contents
+The base image includes:
+- Python 3.12-slim
+- System dependencies (build-essential, libpq-dev, curl)
+- uv package manager
+- All Python packages from `pyproject.toml` (production + dev)
 
 ## 🗄️ Database Management
 
@@ -183,20 +250,49 @@ Test environments:
 
 1. **Setup development environment** (see Quick Start)
 2. **Create feature branch:** `git checkout -b feature/new-feature`
-3. **Run tests:** `make test`
-4. **Submit pull request** with tests and documentation
+3. **Format and lint your code:** `make format && make lint`
+4. **Run tests:** `make test`
+5. **Submit pull request** with tests and documentation
 
-### Code Quality
-- **Linting**: Configured for consistent code style
-- **Type Hints**: Full typing coverage required
+### Code Quality Standards
+
+This project uses automated code quality tools to maintain consistency:
+
+#### Formatting & Linting Tools
+- **Black** (v25.9.0+): Code formatter with 100 char line length
+- **isort** (v6.1.0+): Import statement organizer (black-compatible profile)
+- **flake8** (v7.3.0+): Style guide enforcer with max complexity of 10
+
+#### Configuration
+All tools are configured in `pyproject.toml` and `.flake8`:
+- Line length: 100 characters
+- Target: Python 3.12+
+- Excludes: alembic migrations, cache directories, vendor code
+
+#### Usage
+```bash
+# Before committing
+make format           # Auto-format code with black and isort
+make lint             # Check for linting issues with flake8
+
+# In CI/CD pipelines
+make lint-check       # Verify formatting without changes
+
+# Quick fix
+make fix              # Format and fix all issues
+```
+
+#### Requirements
+- **Type Hints**: Full typing coverage required for new code
 - **Testing**: Comprehensive test coverage expected
 - **Documentation**: Update relevant docs with changes
+- **Linting**: All code must pass `make lint-check` before merging
 
 ## 📚 Additional Resources
 
 - **API Documentation**: Available at `/docs` when running
 - **Architecture Docs**: See `docs/` directory
-- **Docker Guide**: See `docker/README.md`
+- **Docker Guide**: See `infra/docker/README.md`
 - **Database Schema**: Generated diagrams in `docs/`
 
 
