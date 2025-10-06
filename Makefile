@@ -31,24 +31,24 @@ help: ## Show this help message
 
 # Build commands
 build: ## Build the backend application
-	$(SCRIPTS)\build$(SCRIPT_EXT)
+	$(SCRIPTS)/build$(SCRIPT_EXT)
 
 build-base: ## Build base image with all dependencies
-	$(SCRIPTS)\build-base$(SCRIPT_EXT)
+	$(SCRIPTS)/build-base$(SCRIPT_EXT)
 
 push-base: ## Build and push base image to Docker Hub
-	$(SCRIPTS)\build-base$(SCRIPT_EXT) --push
+	$(SCRIPTS)/build-base$(SCRIPT_EXT) --push
 
 # Development
 dev: ## Run development environment (API + DB)
-	$(SCRIPTS)\dev$(SCRIPT_EXT)
+	$(SCRIPTS)/dev$(SCRIPT_EXT)
 
 # Testing
 test: ## Run tests in CI environment
-	$(SCRIPTS)\test$(SCRIPT_EXT)
+	$(SCRIPTS)/test$(SCRIPT_EXT)
 
 ci: ## Run full CI pipeline (lint + format check + tests)
-	$(SCRIPTS)\ci$(SCRIPT_EXT)
+	$(SCRIPTS)/ci$(SCRIPT_EXT)
 
 # Cleanup
 clean: ## Clean up Docker resources
