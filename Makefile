@@ -62,18 +62,18 @@ clean-all: ## Clean up all Docker resources (including images)
 # Code quality (runs inside Docker)
 format: ## Format code with black and isort
 	@echo "Formatting code in Docker..."
-	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run black app tests
-	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run isort app tests
+	cd infra/docker && docker compose -f docker-compose.yml run --rm api uv run black app tests
+	cd infra/docker && docker compose -f docker-compose.yml run --rm api uv run isort app tests
 
 lint: ## Run linters (flake8)
 	@echo "Running linters in Docker..."
-	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run flake8 app tests
+	cd infra/docker && docker compose -f docker-compose.yml run --rm api uv run flake8 app tests
 
 lint-check: ## Check code formatting and linting without modifying
 	@echo "Checking code formatting in Docker..."
-	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run black --check app tests
-	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run isort --check-only app tests
-	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run flake8 app tests
+	cd infra/docker && docker compose -f docker-compose.yml run --rm api uv run black --check app tests
+	cd infra/docker && docker compose -f docker-compose.yml run --rm api uv run isort --check-only app tests
+	cd infra/docker && docker compose -f docker-compose.yml run --rm api uv run flake8 app tests
 
 fix: ## Auto-fix code formatting and imports
 	@echo "Auto-fixing code in Docker..."
