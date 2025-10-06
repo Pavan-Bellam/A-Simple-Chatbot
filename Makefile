@@ -1,96 +1,81 @@
 # Makefile for A Simple Chatbot
 # Convenience commands for Docker operations
 
-.PHONY: help dev prod ci test build clean logs stop restart
+.PHONY: help build build-base push-base dev test ci clean format lint lint-check fix
+
+# Detect OS and set script extension
+ifeq ($(OS),Windows_NT)
+    SCRIPT_EXT := .bat
+    SCRIPTS := infra\docker\scripts
+else
+    SCRIPT_EXT := .sh
+    SCRIPTS := ./infra/docker/scripts
+endif
 
 # Default target
 help: ## Show this help message
 	@echo "A Simple Chatbot - Docker Management"
 	@echo ""
 	@echo "Available commands:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "  build          Build the backend application"
+	@echo "  build-base     Build base image with all dependencies"
+	@echo "  push-base      Build and push base image to Docker Hub"
+	@echo "  dev            Run development environment (API + DB)"
+	@echo "  test           Run tests in CI environment"
+	@echo "  ci             Run full CI pipeline (lint + format + tests)"
+	@echo "  clean          Clean up Docker resources"
+	@echo "  format         Format code with black and isort"
+	@echo "  lint           Run flake8 linter"
+	@echo "  lint-check     Check formatting and linting without changes"
+	@echo "  fix            Auto-fix code formatting"
 
-# Development commands
-dev: ## Start development environment with hot reload
-	@echo "Starting development environment..."
-	./docker/scripts/start.sh --env dev
+# Build commands
+build: ## Build the backend application
+	$(SCRIPTS)\build$(SCRIPT_EXT)
 
-dev-build: ## Build and start development environment
-	@echo "Building and starting development environment..."
-	./docker/scripts/start.sh --env dev --build
+build-base: ## Build base image with all dependencies
+	$(SCRIPTS)\build-base$(SCRIPT_EXT)
 
-dev-detach: ## Start development environment in background
-	@echo "Starting development environment in detached mode..."
-	./docker/scripts/start.sh --env dev --detach
+push-base: ## Build and push base image to Docker Hub
+	$(SCRIPTS)\build-base$(SCRIPT_EXT) --push
 
-# Testing commands
+# Development
+dev: ## Run development environment (API + DB)
+	$(SCRIPTS)\dev$(SCRIPT_EXT)
+
+# Testing
 test: ## Run tests in CI environment
-	@echo "Running tests..."
-	./docker/scripts/start.sh --test
+	$(SCRIPTS)\test$(SCRIPT_EXT)
 
-ci: ## Start CI environment
-	@echo "Starting CI environment..."
-	./docker/scripts/start.sh --env ci
+ci: ## Run full CI pipeline (lint + format check + tests)
+	$(SCRIPTS)\ci$(SCRIPT_EXT)
 
-# Production commands
-prod-build: ## Build production image for ECS
-	@echo "Building production image..."
-	./docker/scripts/build.sh --env prod
-
-prod-push: ## Build and push production image to registry
-	@echo "Building and pushing production image..."
-	./docker/scripts/build.sh --env prod --push
-
-# Management commands
-logs: ## Show logs for all services
-	@echo "Showing logs..."
-	./docker/scripts/start.sh --logs
-
-logs-api: ## Show API service logs
-	@echo "Showing API logs..."
-	./docker/scripts/start.sh --logs api
-
-logs-db: ## Show database logs
-	@echo "Showing database logs..."
-	./docker/scripts/start.sh --logs db
-
-stop: ## Stop all services
-	@echo "Stopping all services..."
-	./docker/scripts/start.sh --stop
-
-restart-api: ## Restart API service
-	@echo "Restarting API service..."
-	./docker/scripts/start.sh --restart api
-
-restart-db: ## Restart database service
-	@echo "Restarting database service..."
-	./docker/scripts/start.sh --restart db
-
-# Cleanup commands
+# Cleanup
 clean: ## Clean up Docker resources
-	@echo "Cleaning up Docker resources..."
 	docker system prune -f
 	docker volume prune -f
 
 clean-all: ## Clean up all Docker resources (including images)
-	@echo "Cleaning up all Docker resources..."
 	docker system prune -af
 	docker volume prune -f
 
-# Setup commands
-setup: ## Initial setup - copy environment file
-	@echo "Setting up environment..."
-	@if [ ! -f .env ]; then \
-		cp docker/.env.example .env; \
-		echo "Created .env file from template. Please edit it with your configuration."; \
-	else \
-		echo ".env file already exists."; \
-	fi
+# Code quality (runs inside Docker)
+format: ## Format code with black and isort
+	@echo "Formatting code in Docker..."
+	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run black app tests
+	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run isort app tests
 
-# Health check
-health: ## Check health of running services
-	@echo "Checking service health..."
-	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-	@echo ""
-	@echo "Testing API health endpoint..."
-	@curl -f http://localhost:8000/health 2>/dev/null && echo "✅ API is healthy" || echo "❌ API is not responding"
+lint: ## Run linters (flake8)
+	@echo "Running linters in Docker..."
+	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run flake8 app tests
+
+lint-check: ## Check code formatting and linting without modifying
+	@echo "Checking code formatting in Docker..."
+	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run black --check app tests
+	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run isort --check-only app tests
+	cd infra/docker && docker-compose -f docker-compose.yml run --rm api uv run flake8 app tests
+
+fix: ## Auto-fix code formatting and imports
+	@echo "Auto-fixing code in Docker..."
+	$(MAKE) format
+	@echo "Code formatted successfully!"
