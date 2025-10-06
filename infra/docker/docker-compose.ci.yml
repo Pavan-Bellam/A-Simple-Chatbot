@@ -10,8 +10,14 @@ services:
       context: ../..
       dockerfile: infra/docker/Dockerfile
       target: development
+      args:
+        BASE_IMAGE: hero7hero/simple-chatbot:latest
     container_name: chatbot-api-ci
+    env_file:
+      # Load from .env file (locally: your .env, CI: generated from secrets)
+      - ../../.env
     environment:
+      # Override DATABASE_URL for test database
       - DATABASE_URL=postgresql://test_user:test_password@db:5432/chatbot_test_db
       - ENVIRONMENT=testing
       - DEBUG=false
