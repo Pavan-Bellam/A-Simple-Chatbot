@@ -2,7 +2,7 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [ci_cd]
+    branches: [ecr_ci_cd]
 
 jobs:
   test:
