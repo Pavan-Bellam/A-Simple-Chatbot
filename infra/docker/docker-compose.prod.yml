@@ -12,7 +12,7 @@ services:
       dockerfile: infra/docker/Dockerfile
       target: production
       args:
-        BASE_IMAGE: hero7hero/simple-chatbot:latest
+        BASE_IMAGE: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG:-latest}
     container_name: chatbot-api-prod
     environment:
       # In ECS, these come from environment variables/secrets
