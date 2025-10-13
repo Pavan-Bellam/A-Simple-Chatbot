@@ -25,8 +25,8 @@ jobs:
 
       - name: Install AWS CLI
         run: |
-          apt-get update -y
-          apt-get install -y awscli
+          sudo apt-get update -y
+          sudo apt-get install -y awscli
 
       - name: Login to Amazon ECR
         run: |
