@@ -1,1 +1,8 @@
+# Shell scripts must have LF endings
 *.sh text eol=lf
+
+# Windows batch files must have CRLF endings
+*.bat text eol=crlf
+
+# Makefile should have LF endings (Make requires LF)
+Makefile text eol=lf
