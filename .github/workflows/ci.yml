@@ -1,9 +1,8 @@
-name : CI Pipeline
+name: CI Pipeline
 
-on: 
+on:
   pull_request:
-    branches: [dev, main]
-
+    branches: [ci_cd]
 
 jobs:
   test:
@@ -19,21 +18,34 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
-            path: /tmp/.buildx-cache
-            key: ${{runner.os}}-buildx-${{github.sha}}
-            restore-keys: |
-              ${{runner.os}}-buildx-
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
-      - name: Create .env file from secrets
+      - name: Install AWS CLI
         run: |
-          cat > .env << EOF
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          COGNITO_REGION=${{ secrets.COGNITO_REGION }}
-          COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }}
-          COGNITO_APP_CLIENT_ID=${{ secrets.COGNITO_APP_CLIENT_ID }}
-          COGNITO_APP_CLIENT_SECRET=${{ secrets.COGNITO_APP_CLIENT_SECRET }}
+          apt-get update -y
+          apt-get install -y awscli
+
+      - name: Login to Amazon ECR
+        run: |
+          region="${AWS_REGION:-${{ secrets.AWS_REGION }}}"
+          account="${AWS_ACCOUNT_ID:-${{ secrets.AWS_ACCOUNT_ID }}}"
+          echo "Logging in to ECR in region=$region account=$account"
+          aws ecr get-login-password --region "$region" | \
+            docker login --username AWS --password-stdin \
+            "$account".dkr.ecr."$region".amazonaws.com
+
+      - name: Create .env file
+        run: |
+          cat > .env <<EOF
+          OPENAI_API_KEY=${OPENAI_API_KEY:-${{ secrets.OPENAI_API_KEY }}}
+          COGNITO_REGION=${COGNITO_REGION:-${{ secrets.COGNITO_REGION }}}
+          COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID:-${{ secrets.COGNITO_USER_POOL_ID }}}
+          COGNITO_APP_CLIENT_ID=${COGNITO_APP_CLIENT_ID:-${{ secrets.COGNITO_APP_CLIENT_ID }}}
+          COGNITO_APP_CLIENT_SECRET=${COGNITO_APP_CLIENT_SECRET:-${{ secrets.COGNITO_APP_CLIENT_SECRET }}}
           EOF
 
-      - name: Build test container and run tests
-        run : make test
-              
+      - name: Build and test
+        run: make test
