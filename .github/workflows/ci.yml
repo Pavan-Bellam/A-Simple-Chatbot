@@ -36,6 +36,13 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set ECR variables to pull the base image
+        run: |
+          echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=chatbot" >> $GITHUB_ENV
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+
       - name: Create .env file
         run: |
           cat > .env <<EOF
