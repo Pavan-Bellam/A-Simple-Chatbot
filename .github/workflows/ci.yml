@@ -2,8 +2,8 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [ci_cd]
-    
+    branches: [ecr_ci_cd]
+
 permissions:
   id-token: write
   contents: read
