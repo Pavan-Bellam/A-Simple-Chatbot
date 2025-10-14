@@ -2,7 +2,11 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [ci_cd]
+    branches: [dev]
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   test:
@@ -23,19 +27,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: Install AWS CLI
-        run: |
-          apt-get update -y
-          apt-get install -y awscli
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{secrets.PULL_REQUEST_AWS_ROLE_TO_ASSUME}}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set ECR variables to pull the base image
         run: |
-          region="${AWS_REGION:-${{ secrets.AWS_REGION }}}"
-          account="${AWS_ACCOUNT_ID:-${{ secrets.AWS_ACCOUNT_ID }}}"
-          echo "Logging in to ECR in region=$region account=$account"
-          aws ecr get-login-password --region "$region" | \
-            docker login --username AWS --password-stdin \
-            "$account".dkr.ecr."$region".amazonaws.com
+          echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=chatbot" >> $GITHUB_ENV
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
 
       - name: Create .env file
         run: |
