@@ -1,9 +1,3 @@
-# Production Docker Compose - For reference only
-# In production, only the backend image is deployed to ECS with ALB in front
-# Database and other services are managed externally
-
-version: '3.8'
-
 services:
   # FastAPI Application - Production (ECS deployment reference)
   api:
@@ -14,10 +8,6 @@ services:
       args:
         BASE_IMAGE: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG:-latest}
     container_name: chatbot-api-prod
-    environment:
-      # In ECS, these come from environment variables/secrets
-      - ENVIRONMENT=production
-      - DATABASE_URL=${DATABASE_URL}  # External RDS database
     ports:
       - "8000:8000"
     restart: always
