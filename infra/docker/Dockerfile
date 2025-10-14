@@ -1,9 +1,10 @@
 # Lightweight Dockerfile for A Simple Chatbot Backend
 # Uses pre-built base image with all dependencies
 
-# Use custom base image with all dependencies pre-installed
-# Build base: docker build -f infra/docker/Dockerfile.base -t hero7hero/simple-chatbot:latest .
-ARG BASE_IMAGE=hero7hero/simple-chatbot:latest
+# Use custom base image with all dependencies pre-installed from ECR
+# Build base: make build-base
+# Push to ECR: make push-base
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE} AS base
 
 # Stage for development

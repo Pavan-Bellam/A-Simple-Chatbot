@@ -11,7 +11,7 @@ services:
       dockerfile: infra/docker/Dockerfile
       target: development
       args:
-        BASE_IMAGE: hero7hero/simple-chatbot:latest
+        BASE_IMAGE: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG:-latest}
     container_name: chatbot-api-ci
     env_file:
       # Load from .env file (locally: your .env, CI: generated from secrets)

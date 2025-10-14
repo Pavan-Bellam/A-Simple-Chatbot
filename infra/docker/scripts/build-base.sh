@@ -1,10 +1,24 @@
 #!/bin/bash
-# Build and optionally push the base image with all dependencies
+# Build and optionally push the base image with all dependencies to AWS ECR
 
 set -e
 
-IMAGE_NAME="hero7hero/simple-chatbot"
-TAG="latest"
+# Load environment variables from .env file
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | grep -v '^$' | xargs)
+fi
+
+# Check required environment variables
+if [ -z "$AWS_ACCOUNT_ID" ] || [ -z "$AWS_REGION" ] || [ -z "$ECR_REPOSITORY" ]; then
+    echo "[ERROR] Missing required environment variables in .env file:"
+    echo "  AWS_ACCOUNT_ID, AWS_REGION, ECR_REPOSITORY"
+    exit 1
+fi
+
+# Construct ECR image name
+ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+IMAGE_NAME="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+TAG="${IMAGE_TAG:-latest}"
 PUSH=false
 
 # Parse arguments
@@ -32,13 +46,21 @@ docker build -f infra/docker/Dockerfile.base -t "$IMAGE_NAME:$TAG" .
 
 echo "[INFO] Base image built successfully: $IMAGE_NAME:$TAG"
 
-# Push to registry if requested
+# Push to ECR if requested
 if [[ "$PUSH" == true ]]; then
-    echo "[INFO] Pushing to registry..."
+    echo "[INFO] Logging into ECR..."
+    aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] Failed to authenticate with ECR"
+        exit 1
+    fi
+
+    echo "[INFO] Pushing to ECR..."
     docker push "$IMAGE_NAME:$TAG"
 
-    echo "[INFO] Base image pushed: $IMAGE_NAME:$TAG"
+    echo "[INFO] Base image pushed to ECR: $IMAGE_NAME:$TAG"
 else
-    echo "[INFO] To push to Docker Hub, run: $0 --push"
-    echo "[INFO] Make sure you're logged in: docker login"
+    echo "[INFO] To push to ECR, run: $0 --push"
+    echo "[INFO] Make sure AWS CLI is configured with proper credentials"
 fi

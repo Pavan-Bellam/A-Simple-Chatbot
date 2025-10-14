@@ -1,9 +1,12 @@
-name : CI Pipeline
+name: CI Pipeline
 
-on: 
+on:
   pull_request:
-    branches: [dev, main]
+    branches: [dev]
 
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   test:
@@ -19,21 +22,36 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
-            path: /tmp/.buildx-cache
-            key: ${{runner.os}}-buildx-${{github.sha}}
-            restore-keys: |
-              ${{runner.os}}-buildx-
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
-      - name: Create .env file from secrets
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{secrets.PULL_REQUEST_AWS_ROLE_TO_ASSUME}}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set ECR variables to pull the base image
         run: |
-          cat > .env << EOF
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          COGNITO_REGION=${{ secrets.COGNITO_REGION }}
-          COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }}
-          COGNITO_APP_CLIENT_ID=${{ secrets.COGNITO_APP_CLIENT_ID }}
-          COGNITO_APP_CLIENT_SECRET=${{ secrets.COGNITO_APP_CLIENT_SECRET }}
+          echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=chatbot" >> $GITHUB_ENV
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+
+      - name: Create .env file
+        run: |
+          cat > .env <<EOF
+          OPENAI_API_KEY=${OPENAI_API_KEY:-${{ secrets.OPENAI_API_KEY }}}
+          COGNITO_REGION=${COGNITO_REGION:-${{ secrets.COGNITO_REGION }}}
+          COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID:-${{ secrets.COGNITO_USER_POOL_ID }}}
+          COGNITO_APP_CLIENT_ID=${COGNITO_APP_CLIENT_ID:-${{ secrets.COGNITO_APP_CLIENT_ID }}}
+          COGNITO_APP_CLIENT_SECRET=${COGNITO_APP_CLIENT_SECRET:-${{ secrets.COGNITO_APP_CLIENT_SECRET }}}
           EOF
 
-      - name: Build test container and run tests
-        run : make test
-              
+      - name: Build and test
+        run: make test

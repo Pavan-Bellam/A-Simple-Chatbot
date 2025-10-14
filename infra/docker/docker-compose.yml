@@ -8,7 +8,7 @@ services:
       dockerfile: infra/docker/Dockerfile
       target: development
       args:
-        BASE_IMAGE: hero7hero/simple-chatbot:latest
+        BASE_IMAGE: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG:-latest}
     container_name: chatbot-api-dev
     environment:
       - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/chatbot_db
@@ -22,9 +22,9 @@ services:
       # Mount source code and config files for development, testing, and linting
       - ../../app:/app/app:ro
       - ../../tests:/app/tests:ro
-      - ../../pyproject.toml:/app/pyproject.toml:ro
-      - ../../uv.lock:/app/uv.lock:ro
       - ../../.flake8:/app/.flake8:ro
+      # NOTE: pyproject.toml and uv.lock are NOT mounted - they're baked into the base image
+      # If you update dependencies, rebuild the base image with: make build-base
     depends_on:
       db:
         condition: service_healthy

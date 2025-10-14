@@ -3,13 +3,24 @@
 
 .PHONY: help build build-base push-base dev test ci clean format lint lint-check fix
 
-# Detect OS and set script extension
+# Cross-platform configuration
+# Make always uses forward slashes for paths, even on Windows
+SCRIPTS := infra/docker/scripts
+
+# Detect Windows and configure appropriately
 ifeq ($(OS),Windows_NT)
     SCRIPT_EXT := .bat
-    SCRIPTS := infra\docker\scripts
+    # Use cmd.exe for .bat files and convert forward slashes to backslashes
+    SHELL := cmd.exe
+    .SHELLFLAGS := /c
+    # Convert forward slashes to backslashes for Windows
+    SCRIPTS_WIN := $(subst /,\,$(SCRIPTS))
+    RUN_SCRIPT = $(SCRIPTS_WIN)\$(1)$(SCRIPT_EXT)
 else
     SCRIPT_EXT := .sh
-    SCRIPTS := ./infra/docker/scripts
+    SHELL := /bin/bash
+    .SHELLFLAGS := -c
+    RUN_SCRIPT = ./$(SCRIPTS)/$(1)$(SCRIPT_EXT)
 endif
 
 # Default target
@@ -31,24 +42,24 @@ help: ## Show this help message
 
 # Build commands
 build: ## Build the backend application
-	$(SCRIPTS)/build$(SCRIPT_EXT)
+	$(call RUN_SCRIPT,build)
 
-build-base: ## Build base image with all dependencies
-	$(SCRIPTS)/build-base$(SCRIPT_EXT)
+build-base: ## Build base image with all dependencies (run this when pyproject.toml or uv.lock changes)
+	$(call RUN_SCRIPT,build-base)
 
 push-base: ## Build and push base image to Docker Hub
-	$(SCRIPTS)/build-base$(SCRIPT_EXT) --push
+	$(call RUN_SCRIPT,build-base) --push
 
 # Development
 dev: ## Run development environment (API + DB)
-	$(SCRIPTS)/dev$(SCRIPT_EXT)
+	$(call RUN_SCRIPT,dev)
 
 # Testing
 test: ## Run tests in CI environment
-	@bash $(SCRIPTS)/test.sh
+	$(call RUN_SCRIPT,test)
 
 ci: ## Run full CI pipeline (lint + format check + tests)
-	@bash $(SCRIPTS)/ci.sh
+	$(call RUN_SCRIPT,ci)
 
 # Cleanup
 clean: ## Clean up Docker resources
